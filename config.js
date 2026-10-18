@@ -1,3 +1,2 @@
-// Set this to the HTTPS URL returned by Render after deploying freeship.back.
-// Leave empty when the backend serves this frontend on the same domain.
-window.LIZE_API_URL = "";
+// Public API URL only. Credentials never belong in this file.
+window.LIZE_API_URL = "https://freeship-back.onrender.com";
