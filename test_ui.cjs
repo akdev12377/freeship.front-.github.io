@@ -1,0 +1,12 @@
+// Lightweight rendering checks without browser dependencies.
+const vm=require('node:vm'),fs=require('node:fs'),assert=require('node:assert/strict');
+const nodes=new Map();const node=s=>{if(!nodes.has(s))nodes.set(s,{innerHTML:'',textContent:'',style:{},classList:{add(){},remove(){}},focus(){}});return nodes.get(s)};
+const context={console,Intl,Date,Math,Number,String,JSON,Map,Set,Array,Object,Promise,URL,localStorage:{getItem(){return null},setItem(){}},crypto:{randomUUID(){return'test'}},location:{hash:'#/'},document:{querySelector:node,querySelectorAll(){return[]},body:{style:{}},addEventListener(){}},window:{addEventListener(){},scrollTo(){}},setTimeout(){},setInterval(){},fetch:()=>new Promise(()=>{}),matchMedia:()=>({matches:true})};vm.createContext(context);vm.runInContext(fs.readFileSync('app.js','utf8'),context);
+vm.runInContext(`settings={brand:'LIZE',announcement:'A considered wardrobe',hero_title:'Less, but\\nbetter.',hero_subtitle:'Test',hero_image:''};products=Array.from({length:120},(_,i)=>({id:i+1,name:'Atelier '+i,category:cats[Math.floor(i/10)],audience:i>109?'Kids':i%2?'Men':'Women',price:100+i,stock:15,color:'#abcdef',material:'Demo cotton',story:'Demo story'}));`,context);
+for(const path of ['/','/shop','/shop/Women','/shop/Men','/shop/Kids','/brand','/wishlist','/product/1','/product/99999','/admin']){context.location.hash='#'+path;vm.runInContext('render()',context);assert(node('#app').innerHTML.length>100,path)}
+context.location.hash='#/shop';vm.runInContext("audience='All';category='Jackets';query='';render()",context);assert.equal(node('#count').textContent,'10 pieces');
+vm.runInContext("audience='Men';render()",context);assert.equal(node('#count').textContent,'5 pieces');
+vm.runInContext("query='no result';renderGrid()",context);assert.equal(node('#count').textContent,'0 pieces');
+vm.runInContext("session=true;overview={orders:[],live:[],visitors:0,revenue:0,low_stock:0}",context);context.location.hash='#/admin';
+for(const tab of ['Overview','Analytics','Live visitors','Products','Inventory','Orders','Site images','Settings']){vm.runInContext(`adminTab=${JSON.stringify(tab)};render()`,context);assert(node('#app').innerHTML.includes(tab),tab)}
+assert.equal(vm.runInContext("esc('<img onerror=alert(1)>')",context),'&lt;img onerror=alert(1)&gt;');console.log('Passed: 10 storefront routes, 8 admin sections, catalog filters and HTML escaping.');
